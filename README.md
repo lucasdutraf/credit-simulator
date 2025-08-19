@@ -7,7 +7,7 @@ Flask application boiler-plate.
 With Docker and Docker-Compose installed, follow the instructions below to run the application.:
 
 ```shell
-    docker-compose up
+    docker compose up
 ```
 
 ## Installing pre-commit tool
@@ -27,5 +27,5 @@ Then, install the configured hooks in the `.pre-commit-config.yaml` file.
 ## Access web container
 
 ```shell
-    docker-compose exec web sh
+    docker compose exec web sh
 ```
