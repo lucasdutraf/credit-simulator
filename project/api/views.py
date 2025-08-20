@@ -1,8 +1,10 @@
 from flask import request
 from flask_restx import Namespace, Resource
 from datetime import datetime
+import time
+import statistics
 from marshmallow import ValidationError
-from .schemas import LoanSimulationSchema
+from .schemas import BatchLoanSimulationSchema
 from .utils.loan_simulator import LoanSimulator
 from .swagger_models import create_api_models
 
@@ -26,12 +28,16 @@ class LoanSimulation(Resource):
     @api.response(500, "Internal Server Error", models["error_response"])
     def post(self):
         """
-        Simulate a loan with age-based interest rates
+        Process batch loan simulations with age-based interest rates
 
-        This endpoint calculates loan simulation details including:
-        - Monthly payment amount using compound interest formula
-        - Total value to be paid over the loan term
-        - Total interest amount
+        This endpoint processes multiple loan simulations in a single request.
+        It supports batch processing of up to 10,000 loan simulations for efficiency.
+
+        Features:
+        - Batch processing: 1 to 10,000 simulations per request
+        - Performance optimized: Efficient processing for large batches
+        - Summary statistics: Aggregate metrics across all simulations
+        - Age-based interest rates: Different rates for different age groups
 
         Interest rates are determined by customer age:
         - Until 25 years: 5% annual
@@ -44,36 +50,69 @@ class LoanSimulation(Resource):
                          (1 - (1 + (yearly_rate / 12))^(-payment_deadline))
         """
         try:
+            start_time = time.time()
+
             payload = request.get_json()
 
             if payload is None:
                 api.abort(400, "JSON payload is required")
 
-            schema = LoanSimulationSchema()
+            schema = BatchLoanSimulationSchema()
             try:
                 validated_data = schema.load(payload)
             except ValidationError as err:
                 api.abort(400, "Validation failed", details=err.messages)
 
-            value = validated_data["value"]
-            date_of_birth = validated_data["date_of_birth"]
-            payment_deadline = validated_data["payment_deadline"]
+            simulations = validated_data["simulations"]
 
-            birth_date = datetime.strptime(date_of_birth, "%d-%m-%Y")
+            # Process batch simulations
+            results = []
+            loan_values = []
+            monthly_payments = []
 
-            simulation_data = LoanSimulator.simulate_loan(
-                loan_value=value,
-                birth_date=birth_date,
-                payment_deadline_months=payment_deadline,
-            )
+            for simulation in simulations:
+                value = simulation["value"]
+                date_of_birth = simulation["date_of_birth"]
+                payment_deadline = simulation["payment_deadline"]
 
-            simulation_result = {
-                "total_value_to_pay": simulation_data["total_value_to_pay"],
-                "monthly_payment_amount": simulation_data["monthly_payment"],
-                "total_interest": simulation_data["total_interest"],
+                birth_date = datetime.strptime(date_of_birth, "%d-%m-%Y")
+
+                simulation_data = LoanSimulator.simulate_loan(
+                    loan_value=value,
+                    birth_date=birth_date,
+                    payment_deadline_months=payment_deadline,
+                )
+
+                result = {
+                    "total_value_to_pay": simulation_data["total_value_to_pay"],
+                    "monthly_payment_amount": simulation_data["monthly_payment"],
+                    "total_interest": simulation_data["total_interest"],
+                }
+
+                results.append(result)
+                loan_values.append(value)
+                monthly_payments.append(simulation_data["monthly_payment"])
+
+            processing_time = (
+                time.time() - start_time
+            ) * 1000  # Convert to milliseconds
+
+            summary = {
+                "total_simulations": len(results),
+                "processing_time_ms": round(processing_time, 2),
+                "average_loan_value": (
+                    round(statistics.mean(loan_values), 2) if loan_values else 0
+                ),
+                "average_monthly_payment": (
+                    round(statistics.mean(monthly_payments), 2)
+                    if monthly_payments
+                    else 0
+                ),
             }
 
-            return simulation_result, 200
+            response = {"results": results, "summary": summary}
+
+            return response, 200
 
         except Exception as e:
             api.abort(500, f"Internal server error: {str(e)}")

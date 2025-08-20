@@ -2,7 +2,9 @@ from marshmallow import Schema, fields, validates, ValidationError, pre_load, EX
 from datetime import datetime
 
 
-class LoanSimulationSchema(Schema):
+class LoanSimulationItemSchema(Schema):
+    """Schema for a single loan simulation item."""
+
     class Meta:
         unknown = EXCLUDE
 
@@ -48,3 +50,32 @@ class LoanSimulationSchema(Schema):
             datetime.strptime(value, "%d-%m-%Y")
         except ValueError:
             raise ValidationError("Date of birth must be in DD-MM-YYYY format")
+
+
+class BatchLoanSimulationSchema(Schema):
+    """Schema for batch loan simulation requests."""
+
+    class Meta:
+        unknown = EXCLUDE
+
+    simulations = fields.List(
+        fields.Nested(LoanSimulationItemSchema),
+        required=True,
+        validate=lambda x: 1 <= len(x) <= 10000,
+        error_messages={
+            "invalid": "Simulations must be a list of 1 to 10000 items",
+        },
+    )
+
+    @validates("simulations")
+    def validate_simulations_length(self, value):
+        if not isinstance(value, list):
+            raise ValidationError("Simulations must be a list")
+        if len(value) < 1:
+            raise ValidationError("At least one simulation is required")
+        if len(value) > 10000:
+            raise ValidationError("Maximum 10000 simulations allowed per request")
+
+
+# Keep the old schema for backwards compatibility
+LoanSimulationSchema = LoanSimulationItemSchema
