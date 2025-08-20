@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
 from marshmallow import ValidationError
 from .schemas import LoanSimulationSchema
+from .utils.loan_simulator import LoanSimulator
 
 loan_blueprint = Blueprint("loans", __name__)
 
@@ -27,20 +27,16 @@ def simulate_loan():
 
         birth_date = datetime.strptime(date_of_birth, "%d-%m-%Y")
 
-        age = (datetime.now() - birth_date).days // 365
-
-        deadline_date = datetime.now() + relativedelta(months=payment_deadline)
-        days_to_deadline = (deadline_date - datetime.now()).days
-
-        interest_rate = 0.15
-        total_interest = value * interest_rate * (payment_deadline / 12)
-        total_value_to_pay = value + total_interest
-        monthly_fee = total_value_to_pay / payment_deadline
+        simulation_data = LoanSimulator.simulate_loan(
+            loan_value=value,
+            birth_date=birth_date,
+            payment_deadline_months=payment_deadline,
+        )
 
         simulation_result = {
-            "total_value_to_pay": round(total_value_to_pay, 2),
-            "monthly_fee": round(monthly_fee, 2),
-            "interest_rate": interest_rate,
+            "total_value_to_pay": simulation_data["total_value_to_pay"],
+            "monthly_payment_amount": simulation_data["monthly_payment"],
+            "total_interest": simulation_data["total_interest"],
         }
 
         return jsonify(simulation_result), 200
