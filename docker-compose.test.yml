@@ -1,0 +1,61 @@
+services:
+  test:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/app"
+    environment:
+      - FLASK_APP=project/__init__.py
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=0
+      - APP_SETTINGS=project.config.TestingConfig
+      - PYTHONPATH=/app
+    working_dir: /app
+    command: pytest tests/ -v --tb=short
+
+  test-coverage:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/app"
+    environment:
+      - FLASK_APP=project/__init__.py
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=0
+      - APP_SETTINGS=project.config.TestingConfig
+      - PYTHONPATH=/app
+    working_dir: /app
+    command: pytest tests/ --cov=project --cov-report=html --cov-report=term-missing -v
+
+  test-specific:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/app"
+    environment:
+      - FLASK_APP=project/__init__.py
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=0
+      - APP_SETTINGS=project.config.TestingConfig
+      - PYTHONPATH=/app
+    working_dir: /app
+    # Override this command when running specific tests
+    command: pytest tests/test_loan_simulator.py -v
+
+  test-watch:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ".:/app"
+    environment:
+      - FLASK_APP=project/__init__.py
+      - FLASK_ENV=testing
+      - FLASK_DEBUG=0
+      - APP_SETTINGS=project.config.TestingConfig
+      - PYTHONPATH=/app
+    working_dir: /app
+    command: pytest-watch tests/ -- -v
