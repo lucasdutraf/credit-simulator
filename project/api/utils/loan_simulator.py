@@ -1,5 +1,6 @@
 """
-Loan simulation module for calculating loan terms based on customer age and loan parameters.
+Loan simulation module for calculating loan terms based on customer age and
+loan parameters.
 """
 
 from datetime import datetime

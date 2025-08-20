@@ -1,6 +1,3 @@
-import os
-
-
 # https://flask.palletsprojects.com/en/stable/config/#development-production
 class BaseConfig:
     """Base configuration"""

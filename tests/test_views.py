@@ -4,8 +4,7 @@ Tests for the views module.
 
 import pytest
 import json
-from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from flask import Flask
 from project.api.views import loan_blueprint
 
@@ -197,7 +196,7 @@ class TestLoanViews:
         """Test simulate loan endpoint with malformed JSON."""
         response = client.post(
             "/loans/simulate",
-            data='{"value": 50000.0, "date_of_birth": "15-06-1990"',  # Missing closing brace
+            data='{"value": 50000.0, "date_of_birth": "15-06-1990"',  # Missing brace
             content_type="application/json",
         )
 
