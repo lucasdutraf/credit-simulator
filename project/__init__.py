@@ -4,7 +4,7 @@ from flask import Flask
 from flask_migrate import Migrate
 
 from project.api.models import db
-from project.api.views import example_blueprint
+from project.api.views import example_blueprint, loan_blueprint
 
 migrate = Migrate()
 
@@ -27,6 +27,7 @@ def create_app(script_info=None):
 
     # register blueprints
     app.register_blueprint(example_blueprint, url_prefix="/example")
+    app.register_blueprint(loan_blueprint, url_prefix="/loans")
 
     # shell context for flask cli
     @app.shell_context_processor
