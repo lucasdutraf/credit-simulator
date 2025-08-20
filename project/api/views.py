@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from marshmallow import ValidationError
+from .schemas import LoanSimulationSchema
 
 example_blueprint = Blueprint("example", __name__)
 
@@ -20,30 +22,17 @@ def simulate_loan():
         if not payload:
             return {"error": "JSON payload is required"}, 400
 
-        required_fields = ["value", "date_of_birth", "payment_deadline"]
-        missing_fields = [field for field in required_fields if field not in payload]
-
-        if missing_fields:
-            return {
-                "error": f"Missing required fields: {', '.join(missing_fields)}"
-            }, 400
-
-        value = payload.get("value")
-        date_of_birth = payload.get("date_of_birth")
-        payment_deadline = payload.get("payment_deadline")
-
-        if not isinstance(value, (float)) or value <= 0:
-            return {"error": "Value must be a positive number or a float value"}, 400
-
-        if not isinstance(payment_deadline, int) or payment_deadline <= 0:
-            return {
-                "error": "Payment deadline must be a positive integer (months)"
-            }, 400
-
+        schema = LoanSimulationSchema()
         try:
-            birth_date = datetime.strptime(date_of_birth, "%d-%m-%Y")
-        except ValueError:
-            return {"error": "Date of birth must be in DD-MM-YYYY format"}, 400
+            validated_data = schema.load(payload)
+        except ValidationError as err:
+            return {"error": "Validation failed", "details": err.messages}, 400
+
+        value = validated_data["value"]
+        date_of_birth = validated_data["date_of_birth"]
+        payment_deadline = validated_data["payment_deadline"]
+
+        birth_date = datetime.strptime(date_of_birth, "%d-%m-%Y")
 
         age = (datetime.now() - birth_date).days // 365
 
@@ -55,7 +44,6 @@ def simulate_loan():
         total_value_to_pay = value + total_interest
         monthly_fee = total_value_to_pay / payment_deadline
 
-        # Simple simulation response
         simulation_result = {
             "total_value_to_pay": round(total_value_to_pay, 2),
             "monthly_fee": round(monthly_fee, 2),
