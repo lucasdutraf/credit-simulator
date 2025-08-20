@@ -3,24 +3,18 @@ Shared test configuration and fixtures.
 """
 
 import pytest
-from flask import Flask
-from project.api.views import loan_blueprint
+import os
+from project import create_app
 
 
 @pytest.fixture(scope="session")
 def app():
     """Create a Flask app configured for testing."""
-    app = Flask(__name__)
-    app.config.update(
-        {
-            "TESTING": True,
-            "DEBUG": False,
-            "WTF_CSRF_ENABLED": False,
-        }
-    )
+    # Set testing configuration
+    os.environ["APP_SETTINGS"] = "project.config.TestingConfig"
 
-    # Register blueprints
-    app.register_blueprint(loan_blueprint, url_prefix="/loans")
+    # Create app using the factory function
+    app = create_app()
 
     return app
 
