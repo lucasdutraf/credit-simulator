@@ -12,7 +12,7 @@ def simulate_loan():
     try:
         payload = request.get_json()
 
-        if not payload:
+        if payload is None:
             return {"error": "JSON payload is required"}, 400
 
         schema = LoanSimulationSchema()
