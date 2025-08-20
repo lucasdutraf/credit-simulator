@@ -4,14 +4,7 @@ from dateutil.relativedelta import relativedelta
 from marshmallow import ValidationError
 from .schemas import LoanSimulationSchema
 
-example_blueprint = Blueprint("example", __name__)
-
 loan_blueprint = Blueprint("loans", __name__)
-
-
-@example_blueprint.get("/ping")
-def pong():
-    return {"message": "works!"}, 200
 
 
 @loan_blueprint.post("/simulate")
