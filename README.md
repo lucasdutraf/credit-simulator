@@ -81,7 +81,7 @@ flask run --host=0.0.0.0 --port=5001
 - **Documentação Swagger**: http://localhost:5001/docs/
 - **Health Check**: http://localhost:5001/health
 
-### **Opção 2: Execução com Docker (Recomendado para Produção)**
+### **Opção 2: Execução com Docker**
 
 #### **Pré-requisitos**
 - Docker
