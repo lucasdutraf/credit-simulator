@@ -119,12 +119,14 @@ def create_api_models(api):
                             example=40000.0,
                         ),
                         "average_monthly_payment": fields.Float(
-                            description="Average monthly payment across all simulations",
+                            description=(
+                                "Average monthly payment across all simulations"
+                            ),
                             example=1512.36,
                         ),
                     },
                 ),
-                description="Summary statistics for the batch processing",
+                description=("Summary statistics for the batch processing"),
             ),
         },
     )
@@ -140,7 +142,7 @@ def create_api_models(api):
             ),
             "details": fields.Raw(
                 required=False,
-                description="Detailed error information (field-specific errors)",
+                description=("Detailed error information (field-specific errors)"),
                 example={
                     "value": ["Value must be a positive number"],
                     "date_of_birth": ["Date of birth must be in DD-MM-YYYY format"],
@@ -149,7 +151,55 @@ def create_api_models(api):
         },
     )
 
+    # Single loan simulation models
+    single_loan_request = api.model(
+        "SingleLoanRequest",
+        {
+            "value": fields.Float(
+                required=True,
+                description="Loan amount in currency units",
+                example=50000.0,
+                min=0.01,
+            ),
+            "date_of_birth": fields.String(
+                required=True,
+                description="Customer date of birth in DD-MM-YYYY format",
+                example="15-06-1990",
+                pattern=r"^\d{2}-\d{2}-\d{4}$",
+            ),
+            "payment_deadline": fields.Integer(
+                required=True,
+                description="Number of months for loan repayment",
+                example=24,
+                min=1,
+            ),
+        },
+    )
+
+    single_loan_response = api.model(
+        "SingleLoanResponse",
+        {
+            "total_value_to_pay": fields.Float(
+                required=True,
+                description="Total amount to be paid over the loan term",
+                example=51577.45,
+            ),
+            "monthly_payment_amount": fields.Float(
+                required=True,
+                description="Fixed monthly payment amount",
+                example=2149.06,
+            ),
+            "total_interest": fields.Float(
+                required=True,
+                description="Total interest amount to be paid",
+                example=1577.45,
+            ),
+        },
+    )
+
     return {
+        "single_loan_request": single_loan_request,
+        "single_loan_response": single_loan_response,
         "loan_simulation_request": loan_simulation_request,
         "loan_simulation_response": loan_simulation_response,
         "error_response": error_response,

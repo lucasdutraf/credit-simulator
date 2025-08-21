@@ -3,7 +3,10 @@ Loan simulation module for calculating loan terms based on customer age and
 loan parameters.
 """
 
+import multiprocessing as mp
 from datetime import datetime
+from typing import List, Dict, Any
+import os
 
 
 class LoanSimulator:
@@ -145,3 +148,108 @@ class LoanSimulator:
             "total_interest": round(total_interest, 2),
             "payment_deadline_months": payment_deadline_months,
         }
+
+    @staticmethod
+    def _process_single_simulation(simulation_data: Dict[str, Any]) -> dict:
+        """
+        Process a single simulation - static method for multiprocessing compatibility.
+
+        Args:
+            simulation_data (Dict): Dictionary containing simulation parameters
+
+        Returns:
+            dict: Simulation result
+        """
+        # Convert date string to datetime object
+        birth_date = datetime.strptime(simulation_data["date_of_birth"], "%d-%m-%Y")
+
+        return LoanSimulator.simulate_loan(
+            loan_value=simulation_data["value"],
+            birth_date=birth_date,
+            payment_deadline_months=simulation_data["payment_deadline"],
+        )
+
+    @classmethod
+    def simulate_batch_parallel(
+        cls, simulations: List[Dict[str, Any]], max_workers: int = None
+    ) -> List[dict]:
+        """
+        Process multiple loan simulations in parallel using multiprocessing.
+
+        Args:
+            simulations (List[Dict]): List of simulation parameters
+            max_workers (int): Maximum number of worker processes (default: CPU count)
+
+        Returns:
+            List[dict]: List of simulation results
+        """
+        if max_workers is None:
+            # Optimize worker count based on batch size and CPU count
+            cpu_count = os.cpu_count() or 1
+            max_workers = min(len(simulations), cpu_count, 8)  # Cap at 8 workers
+
+        # For very small batches, use sequential processing to avoid overhead
+        if len(simulations) <= 20:
+            return [cls._process_single_simulation(sim) for sim in simulations]
+
+        # Use multiprocessing for larger batches
+        try:
+            with mp.Pool(processes=max_workers) as pool:
+                results = pool.map(cls._process_single_simulation, simulations)
+            return results
+        except Exception:
+            # Fallback to sequential processing if multiprocessing fails
+            return [cls._process_single_simulation(sim) for sim in simulations]
+
+    @classmethod
+    def simulate_batch_chunked_parallel(
+        cls,
+        simulations: List[Dict[str, Any]],
+        chunk_size: int = 100,
+        max_workers: int = None,
+    ) -> List[dict]:
+        """
+        Process large batches of simulations in chunks using parallel processing.
+
+        Args:
+            simulations (List[Dict]): List of simulation parameters
+            chunk_size (int): Size of each processing chunk
+            max_workers (int): Maximum number of worker processes per chunk
+
+        Returns:
+            List[dict]: List of simulation results
+        """
+        if max_workers is None:
+            max_workers = os.cpu_count() or 1
+
+        all_results = []
+
+        # Process simulations in chunks
+        for i in range(0, len(simulations), chunk_size):
+            chunk = simulations[i : i + chunk_size]
+            chunk_results = cls.simulate_batch_parallel(chunk, max_workers)
+            all_results.extend(chunk_results)
+
+        return all_results
+
+    @classmethod
+    def get_optimal_processing_strategy(cls, batch_size: int) -> str:
+        """
+        Determine the optimal processing strategy based on batch size.
+
+        Args:
+            batch_size (int): Number of simulations to process
+
+        Returns:
+            str: Recommended processing strategy
+        """
+        # Based on benchmark results, parallel processing overhead is significant
+        # for small batches, so we use higher thresholds
+        if batch_size <= 20:
+            return "sequential"
+        elif batch_size <= 100:
+            return "parallel_small"
+        elif batch_size <= 500:
+            return "parallel_medium"
+        else:
+            return "parallel_chunked"

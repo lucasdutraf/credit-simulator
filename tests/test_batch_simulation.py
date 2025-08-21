@@ -232,7 +232,8 @@ class TestBatchLoanSimulation:
         assert len(data["results"]) == 4
         results = data["results"]
 
-        # Different age groups should have different total amounts due to different rates
+        # Different age groups should have different total amounts
+        # due to different rates
         # Young customer should pay more than middle-aged due to higher interest
         assert results[0]["total_value_to_pay"] > results[1]["total_value_to_pay"]
 

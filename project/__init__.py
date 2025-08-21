@@ -22,23 +22,23 @@ def create_app(script_info=None):
         title="Credit Simulator API",
         description="""
         A comprehensive loan simulation API with age-based interest rate calculations.
-        
+
         ## Features
         - **Age-Based Interest Rates**: Different rates for different age groups
         - **Compound Interest Calculation**: Accurate monthly payment calculations
         - **Input Validation**: Robust validation using Marshmallow schemas
         - **Comprehensive Documentation**: Interactive Swagger documentation
-        
+
         ## Interest Rate Tiers
         - **Until 25 years**: 5% annual interest rate
         - **26 to 40 years**: 3% annual interest rate
         - **41 to 60 years**: 2% annual interest rate
         - **60+ years**: 4% annual interest rate
-        
+
         ## Monthly Payment Formula
         The monthly payment is calculated using the compound interest formula:
         ```
-        monthly_payment = (loan_value * (yearly_rate / 12)) / 
+        monthly_payment = (loan_value * (yearly_rate / 12)) /
                          (1 - (1 + (yearly_rate / 12))^(-payment_deadline))
         ```
         """,
